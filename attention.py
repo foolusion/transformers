@@ -23,21 +23,12 @@ torch.manual_seed(1337)
 with open('data/input.txt', 'r', encoding='utf-8') as f:
     text = f.read()
 
-trigrams = []
-for i in range(len(text) - 2):
-    trigrams.append(text[i:i + 3])
-# here are all the unique trigrams that occur in this text
-trigrams = sorted(list(set(trigrams)))
-vocab_size = len(trigrams)
-# create a mapping from trigrams to integers
-ttoi = {t: i for i, t in enumerate(trigrams)}
-itot = {i: t for i, t in enumerate(trigrams)}
-
-
-enc = tiktoken.get_encoding("o200k_base")
+enc = tiktoken.get_encoding("gpt2")
+tokens = enc.encode(text)
+vocab_size = len(set(tokens))
 
 # Train and test splits
-data = torch.tensor(enc.encode(text), dtype=torch.long, device=device)
+data = torch.tensor(tokens, dtype=torch.long, device=device)
 n = int(0.9 * len(data))  # first 90% will be train data, rest will be val
 train_data = data[:n]
 val_data = data[n:]
