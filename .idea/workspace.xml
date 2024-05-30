@@ -4,9 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c665372c-c049-4a2f-85e4-6abceb6c2e76" name="Changes" comment="to device">
-      <change afterPath="$PROJECT_DIR$/attention.py" afterDir="false" />
+    <list default="true" id="c665372c-c049-4a2f-85e4-6abceb6c2e76" name="Changes" comment="fix: too many quotes">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/attention.py" beforeDir="false" afterPath="$PROJECT_DIR$/attention.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -86,7 +86,7 @@
       <workItem from="1717018369807" duration="8025000" />
       <workItem from="1717087435331" duration="946000" />
       <workItem from="1717089002366" duration="1085000" />
-      <workItem from="1717090923164" duration="8776000" />
+      <workItem from="1717090923164" duration="10977000" />
     </task>
     <task id="LOCAL-00001" summary="initial commit">
       <option name="closed" value="true" />
@@ -112,7 +112,63 @@
       <option name="project" value="LOCAL" />
       <updated>1717103085766</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="fix generate to crop to the block_size">
+      <option name="closed" value="true" />
+      <created>1717105171908</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1717105171908</updated>
+    </task>
+    <task id="LOCAL-00005" summary="add single self-attention head">
+      <option name="closed" value="true" />
+      <created>1717105200035</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1717105200035</updated>
+    </task>
+    <task id="LOCAL-00006" summary="update max iters and eval_interval">
+      <option name="closed" value="true" />
+      <created>1717105339733</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1717105339733</updated>
+    </task>
+    <task id="LOCAL-00007" summary="attention: update max iters and eval_interval">
+      <option name="closed" value="true" />
+      <created>1717105369592</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1717105369592</updated>
+    </task>
+    <task id="LOCAL-00008" summary="attention: add multi-head attention">
+      <option name="closed" value="true" />
+      <created>1717105762119</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1717105762119</updated>
+    </task>
+    <task id="LOCAL-00009" summary="attention: add feed forward layer">
+      <option name="closed" value="true" />
+      <created>1717106206718</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1717106206718</updated>
+    </task>
+    <task id="LOCAL-00010" summary="fix: too many quotes">
+      <option name="closed" value="true" />
+      <created>1717106253273</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1717106253273</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -133,7 +189,14 @@
     <MESSAGE value="initial commit" />
     <MESSAGE value="update with token and position embeddinngs" />
     <MESSAGE value="to device" />
-    <option name="LAST_COMMIT_MESSAGE" value="to device" />
+    <MESSAGE value="fix generate to crop to the block_size" />
+    <MESSAGE value="add single self-attention head" />
+    <MESSAGE value="update max iters and eval_interval" />
+    <MESSAGE value="attention: update max iters and eval_interval" />
+    <MESSAGE value="attention: add multi-head attention" />
+    <MESSAGE value="attention: add feed forward layer" />
+    <MESSAGE value="fix: too many quotes" />
+    <option name="LAST_COMMIT_MESSAGE" value="fix: too many quotes" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/transformers$main.coverage" NAME="main Coverage Results" MODIFIED="1717022390296" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
