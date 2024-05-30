@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
+import tiktoken
+
 
 # hyperparameters
 batch_size = 64  # how many independent sequences will we process in parallel?
@@ -32,19 +34,10 @@ ttoi = {t: i for i, t in enumerate(trigrams)}
 itot = {i: t for i, t in enumerate(trigrams)}
 
 
-def encode(s: str):
-    return [ttoi[s[i:i + 3]] for i in range(0, len(s) - 2, 3)]
-
-
-def decode(l: list[int]):
-    out = itot[l[0]]
-    for i in range(1, len(l)):
-        out += itot[l[i]][2]
-    return out
-
+enc = tiktoken.get_encoding("o200k_base")
 
 # Train and test splits
-data = torch.tensor(encode(text), dtype=torch.long, device=device)
+data = torch.tensor(enc.encode(text), dtype=torch.long, device=device)
 n = int(0.9 * len(data))  # first 90% will be train data, rest will be val
 train_data = data[:n]
 val_data = data[n:]
@@ -221,4 +214,4 @@ for iter in range(max_iters):
     optimizer.step()
 
 context = torch.zeros((1, 1), dtype=torch.long, device=device)
-print(decode(m.generate(context, max_new_tokens=500)[0].tolist()))
+print(enc.decode(m.generate(context, max_new_tokens=500)[0].tolist()))
