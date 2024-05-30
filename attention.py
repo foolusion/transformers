@@ -3,14 +3,17 @@ import torch.nn as nn
 from torch.nn import functional as F
 
 # hyperparameters
-batch_size = 32  # how many independent sequences will we process in parallel?
-block_size = 8  # what is the maximum context length for predictions?
+batch_size = 64  # how many independent sequences will we process in parallel?
+block_size = 256  # what is the maximum context length for predictions?
 max_iters = 5000
 eval_interval = 500
-learning_rate = 1e-3
+learning_rate = 3e-4
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 eval_iters = 200
-num_embeddings = 32
+num_embeddings = 384
+num_heads = 6
+num_layers = 6
+dropout = 0.2
 # --------------
 
 torch.manual_seed(1337)
@@ -82,6 +85,7 @@ class Head(nn.Module):
         self.query = nn.Linear(num_embeddings, head_size, bias=False)
         self.value = nn.Linear(num_embeddings, head_size, bias=False)
         self.register_buffer('tril', torch.tril(torch.ones(block_size, block_size)))
+        self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
         B, T, C = x.shape
@@ -91,6 +95,7 @@ class Head(nn.Module):
         wei = q @ k.transpose(-2, -1) * C ** -0.5  # (B, T, C) @ (B, C, T) -> (B, T, T)
         wei = wei.masked_fill(self.tril[:T, :T] == 0, float('-inf'))  # (B, T, T)
         wei = F.softmax(wei, dim=-1)
+        wei = self.dropout(wei)
         # perform the weighted aggregation of the values
         v = self.value(x)
         out = wei @ v  # (B, T, T) @ (B, T, C) -> (B, T, C)
@@ -104,21 +109,24 @@ class MultiHeadAttention(nn.Module):
         super().__init__()
         self.heads = nn.ModuleList([Head(head_size) for _ in range(num_heads)])
         self.proj = nn.Linear(num_embeddings, num_embeddings)
+        self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
         out = torch.cat([h(x) for h in self.heads], dim=-1)
-        out = self.proj(out)
+        out = self.dropout(self.proj(out))
         return out
 
 
 class FeedForward(nn.Module):
     """ a simple linear layer followed by a non-linearity """
+
     def __init__(self, num_embeddings):
         super().__init__()
         self.net = nn.Sequential(
             nn.Linear(num_embeddings, 4 * num_embeddings),
             nn.ReLU(),
             nn.Linear(4 * num_embeddings, num_embeddings),
+            nn.Dropout(dropout),
         )
 
     def forward(self, x):
@@ -127,6 +135,7 @@ class FeedForward(nn.Module):
 
 class Block(nn.Module):
     """ Transformer block: communication followed by computation """
+
     def __init__(self, num_embeddings, num_heads):
         """
 
@@ -152,12 +161,8 @@ class BigramLanguageModel(nn.Module):
         # each token directly reads off the logits for the next token from a lookup table
         self.token_embedding_table = nn.Embedding(vocab_size, num_embeddings)
         self.position_embedding_table = nn.Embedding(block_size, num_embeddings)
-        self.blocks = nn.Sequential(
-            Block(num_embeddings, 4),
-            Block(num_embeddings, 4),
-            Block(num_embeddings, 4),
-            nn.LayerNorm(num_embeddings),
-        )
+        self.blocks = nn.Sequential(*[Block(num_embeddings, num_heads) for _ in range(num_layers)])
+        self.ln_f = nn.LayerNorm(num_embeddings)
         self.lm_head = nn.Linear(num_embeddings, vocab_size)
 
     def forward(self, idx, targets=None):
@@ -165,8 +170,9 @@ class BigramLanguageModel(nn.Module):
         # idx and targets are both (B,T) tensor of integers
         token_embeddings = self.token_embedding_table(idx)  # (B, T, C)
         position_embeddings = self.position_embedding_table(torch.arange(T).to(device))
-        x = token_embeddings + position_embeddings
-        x = self.blocks(x) # (B, T, C)
+        x = token_embeddings + position_embeddings  # (B, T, C)
+        x = self.blocks(x)  # (B, T, C)
+        x = self.ln_f(x)  # (B, T, C)
         logits = self.lm_head(x)  # (B, T, vocab_size)
         if targets is None:
             loss = None
