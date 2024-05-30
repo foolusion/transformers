@@ -85,7 +85,7 @@ class BigramLanguageModel(nn.Module):
         B, T = idx.shape
         # idx and targets are both (B,T) tensor of integers
         token_embeddings = self.token_embedding_table(idx) # (B, T, C)
-        position_embeddings = self.position_embedding_table(torch.arange(T))
+        position_embeddings = self.position_embedding_table(torch.arange(T).to(device))
         x = token_embeddings + position_embeddings
         logits = self.lm_head(x) # (B, T, vocab_size)
         if targets is None:
