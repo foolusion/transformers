@@ -25,10 +25,16 @@ with open('data/input.txt', 'r', encoding='utf-8') as f:
 
 enc = tiktoken.get_encoding("gpt2")
 tokens = enc.encode(text)
+unique_tokens = sorted(set(tokens))
+ttoi = {t:i for i, t in enumerate(unique_tokens)}
+itot = {i:t for i, t in enumerate(unique_tokens)}
+encode = lambda t: [ttoi[e] for e in enc.encode(t)]
+decode = lambda t: enc.decode([itot[e] for e in t])
+
 vocab_size = len(set(tokens))
 
 # Train and test splits
-data = torch.tensor(tokens, dtype=torch.long, device=device)
+data = torch.tensor(encode(text), dtype=torch.long, device=device)
 n = int(0.9 * len(data))  # first 90% will be train data, rest will be val
 train_data = data[:n]
 val_data = data[n:]
@@ -205,4 +211,4 @@ for iter in range(max_iters):
     optimizer.step()
 
 context = torch.zeros((1, 1), dtype=torch.long, device=device)
-print(enc.decode(m.generate(context, max_new_tokens=500)[0].tolist()))
+print(decode(m.generate(context, max_new_tokens=500)[0].tolist()))
