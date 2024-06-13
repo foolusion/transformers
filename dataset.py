@@ -58,12 +58,12 @@ class BilingualDataset(Dataset):
         assert input_decoder.size(0) == self.seq_len
         assert label.size(0) == self.seq_len
 
-        mask = torch.tril(torch.ones(self.seq_len, self.seq_len)) == 1
+        mask = torch.tril(torch.ones(self.seq_len, self.seq_len)) == 0
         return {
             "input_encoder": input_encoder,
             "input_decoder": input_decoder,
-            "mask_encoder": (input_encoder != self.token_pad).unsqueeze(0).unsqueeze(0).int(),
-            "mask_decoder": (input_decoder != self.token_pad).unsqueeze(0).unsqueeze(0).int() & mask,
+            "mask_encoder": (input_encoder == self.token_pad).unsqueeze(0),
+            "mask_decoder": (input_decoder == self.token_pad) & mask,
             "label": label,
             "text_src": text_src,
             "text_dst": text_dst,

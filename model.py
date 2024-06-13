@@ -84,7 +84,7 @@ class Head(nn.Module):
         d_k = query.size(-1)
         attention_scores = (query @ key.transpose(-2, -1)) * d_k ** -0.5
         if mask is not None:
-            attention_scores.masked_fill(mask == 0, float('-inf'))
+            attention_scores = attention_scores.masked_fill(mask, float('-inf'))
         attention_scores = F.softmax(attention_scores, dim=-1)
         if dropout is not None:
             attention_scores = dropout(attention_scores)
@@ -136,16 +136,9 @@ class EncoderBlock(nn.Module):
 
 
 class Encoder(nn.Module):
-    def __init__(self, d_model: int, d_ff: int, heads: int, dropout: float):
+    def __init__(self, encoders: list[EncoderBlock], d_model: int):
         super().__init__()
-        self.encoders = nn.ModuleList([
-            EncoderBlock(MultiHeadAttention(d_model, heads, dropout), FeedForward(d_model, d_ff, dropout), dropout),
-            EncoderBlock(MultiHeadAttention(d_model, heads, dropout), FeedForward(d_model, d_ff, dropout), dropout),
-            EncoderBlock(MultiHeadAttention(d_model, heads, dropout), FeedForward(d_model, d_ff, dropout), dropout),
-            EncoderBlock(MultiHeadAttention(d_model, heads, dropout), FeedForward(d_model, d_ff, dropout), dropout),
-            EncoderBlock(MultiHeadAttention(d_model, heads, dropout), FeedForward(d_model, d_ff, dropout), dropout),
-            EncoderBlock(MultiHeadAttention(d_model, heads, dropout), FeedForward(d_model, d_ff, dropout), dropout),
-        ])
+        self.encoders = nn.ModuleList(encoders)
         self.norm = nn.LayerNorm(d_model)
 
     def forward(self, x, mask):
@@ -173,46 +166,9 @@ class DecoderBlock(nn.Module):
 
 
 class Decoder(nn.Module):
-    def __init__(self, d_model: int, d_ff: int, heads: int, dropout: float):
+    def __init__(self, decoders: list[DecoderBlock], d_model: int):
         super().__init__()
-        self.decoders = nn.ModuleList([
-            DecoderBlock(
-                MultiHeadAttention(d_model, heads, dropout),
-                MultiHeadAttention(d_model, heads, dropout),
-                FeedForward(d_model, d_ff, dropout),
-                dropout
-            ),
-            DecoderBlock(
-                MultiHeadAttention(d_model, heads, dropout),
-                MultiHeadAttention(d_model, heads, dropout),
-                FeedForward(d_model, d_ff, dropout),
-                dropout
-            ),
-            DecoderBlock(
-                MultiHeadAttention(d_model, heads, dropout),
-                MultiHeadAttention(d_model, heads, dropout),
-                FeedForward(d_model, d_ff, dropout),
-                dropout
-            ),
-            DecoderBlock(
-                MultiHeadAttention(d_model, heads, dropout),
-                MultiHeadAttention(d_model, heads, dropout),
-                FeedForward(d_model, d_ff, dropout),
-                dropout
-            ),
-            DecoderBlock(
-                MultiHeadAttention(d_model, heads, dropout),
-                MultiHeadAttention(d_model, heads, dropout),
-                FeedForward(d_model, d_ff, dropout),
-                dropout
-            ),
-            DecoderBlock(
-                MultiHeadAttention(d_model, heads, dropout),
-                MultiHeadAttention(d_model, heads, dropout),
-                FeedForward(d_model, d_ff, dropout),
-                dropout
-            ),
-        ])
+        self.decoders = nn.ModuleList(decoders)
         self.norm = nn.LayerNorm(d_model)
 
     def forward(self, x, encoder_output, mask_src, mask_dst):
@@ -246,14 +202,28 @@ class Transformer(nn.Module):
         return self.proj(x)
 
 
-def build_transformer(vocab_size_src, vocab_size_dst, seq_len, d_model: int = 512, heads: int = 8, dropout: float = 0.1,
+def build_transformer(vocab_size_src, vocab_size_dst, seq_len, d_model: int = 512, N: int = 6, heads: int = 8,
+                      dropout: float = 0.1,
                       d_ff: int = 2048):
     embed_src = InputEmbeddings(d_model, vocab_size_src)
     embed_dst = InputEmbeddings(d_model, vocab_size_dst)
     pos_src = PositionalEncoding(d_model, seq_len, dropout)
     pos_dst = PositionalEncoding(d_model, seq_len, dropout)
-    encoder = Encoder(d_model, d_ff, heads, dropout)
-    decoder = Decoder(d_model, d_ff, heads, dropout)
+    encoders = [
+        EncoderBlock(
+            MultiHeadAttention(d_model, heads, dropout),
+            FeedForward(d_model, d_ff, dropout),
+            dropout)
+        for _ in range(N)
+    ]
+    encoder = Encoder(encoders, d_model)
+    decoders = [DecoderBlock(
+        MultiHeadAttention(d_model, heads, dropout),
+        MultiHeadAttention(d_model, heads, dropout),
+        FeedForward(d_model, d_ff, dropout),
+        dropout
+    ) for _ in range(N)]
+    decoder = Decoder(decoders, d_model)
     proj = nn.Linear(d_model, vocab_size_dst)
     transformer = Transformer(encoder, decoder, embed_src, embed_dst, pos_src, pos_dst, proj)
 

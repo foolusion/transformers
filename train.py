@@ -37,6 +37,12 @@ def get_ds(lang_src, lang_dst, seq_len, batch_size):
     ds_raw = load_dataset('opus_books', f'{lang_src}-{lang_dst}', split='train')
     tokenizer_src = get_or_build_tokenizer(ds_raw, lang_src)
     tokenizer_dst = get_or_build_tokenizer(ds_raw, lang_dst)
+    ds_raw = [x for x in ds_raw
+              if
+              len(tokenizer_src.encode(x['translation'][lang_src]).ids) <=
+              len(tokenizer_dst.encode(x['translation'][lang_dst]).ids) <=
+              seq_len-2
+              ]
     train_ds_size = int(0.9 * len(ds_raw))
     ds_raw_train, ds_raw_val = random_split(ds_raw, [train_ds_size, len(ds_raw) - train_ds_size])
     dataset_train = BilingualDataset(ds_raw_train, tokenizer_src, tokenizer_dst, lang_src, lang_dst, seq_len)
@@ -59,21 +65,27 @@ def get_ds(lang_src, lang_dst, seq_len, batch_size):
     return dataloader_train, dataloader_val, tokenizer_src, tokenizer_dst
 
 
-def get_model(vocab_size_src, vocab_size_dst, seq_len):
-    model = build_transformer(vocab_size_src, vocab_size_dst, seq_len)
+def get_model(vocab_size_src, vocab_size_dst, seq_len, d_model, N, heads, dropout, dff):
+    model = build_transformer(vocab_size_src, vocab_size_dst, seq_len, d_model, N, heads, dropout, dff)
     return model
 
 
-def train_model(preload):
-    seq_len = 256
-    batch_size = 64
+def train_model():
+    preload = True
+    seq_len = 384
+    d_model = 384
+    N = 6
+    heads = 8
+    dff = d_model * 4
+    dropout = 0.1
+    batch_size = 32
     training_epochs = 100000
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f'Device: {device}')
     Path('./data/model').mkdir(parents=True, exist_ok=True)
 
     dataloader_train, dataloader_val, tokenizer_src, tokenizer_dst = get_ds('en', 'es', seq_len, batch_size)
-    model = get_model(tokenizer_src.get_vocab_size(), tokenizer_dst.get_vocab_size(), seq_len)
+    model = get_model(tokenizer_src.get_vocab_size(), tokenizer_dst.get_vocab_size(), seq_len, d_model, N, heads, dropout, dff).to(device)
     writer = SummaryWriter('logs', flush_secs=10)
     optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4)
     initial_epoch = 0
@@ -123,4 +135,4 @@ def train_model(preload):
 
 
 if __name__ == '__main__':
-    train_model(preload=False)
+    train_model()
