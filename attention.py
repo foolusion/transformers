@@ -205,7 +205,7 @@ for iter in range(max_iters):
     xb, yb = get_batch('train')
 
     # evaluate the loss
-    logits, loss = model(xb, yb)
+    logits, loss = m(xb, yb)
     optimizer.zero_grad(set_to_none=True)
     loss.backward()
     optimizer.step()
