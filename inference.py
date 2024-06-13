@@ -21,13 +21,16 @@ def beam_search_inference(beam_size: int = 4):
     model_file = Path('./data/model').joinpath('model.pt')
     print(f'Loading model from {model_file}')
     torch.load(model_file)
-
-    text_eng = f'<s>{input("Enter the english text to be translated: ")}</s>'
-    input_encoder = torch.tensor(tokenizer_src.encode(text_eng).ids).to(device)
-    mask_encoder = (torch.ones(input_encoder.size(0)) == 1).to(device)
-    input_decoder = torch.tensor(tokenizer_dst.encode('<s>').ids).to(device)
-    mask_decoder = (torch.tril(torch.ones(input_decoder.size(0), input_decoder.size(0))) == 0).to(device)
+    pad = tokenizer_src.token_to_id('<pad>')
     eos = tokenizer_dst.token_to_id('</s>')
+    text_eng = f'<s>{input("Enter the english text to be translated: ")}</s>'
+    input_tokens_encoder = tokenizer_src.encode(text_eng).ids
+    pad_tokens_input = seq_len - len(input_tokens_encoder)
+    input_encoder = torch.tensor(input_tokens_encoder + [pad] * pad_tokens_input).to(device)
+    mask_encoder = (input_encoder == pad).unsqeeze(0).to(device)
+    input_tokens_decoder = tokenizer_dst.encode('<s>').ids
+    input_decoder = torch.tensor(input_tokens_decoder).to(device)
+    mask_decoder = (torch.tril(torch.ones(input_decoder.size(0), input_decoder.size(0))) == 0).to(device)
     with torch.no_grad():
 
         output_encoder = model.encode(input_encoder, mask_encoder)
