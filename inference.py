@@ -27,7 +27,7 @@ def beam_search_inference(beam_size: int = 4):
     input_tokens_encoder = tokenizer_src.encode(text_eng).ids
     pad_tokens_input = seq_len - len(input_tokens_encoder)
     input_encoder = torch.tensor(input_tokens_encoder + [pad] * pad_tokens_input).to(device)
-    mask_encoder = (input_encoder == pad).unsqeeze(0).to(device)
+    mask_encoder = (input_encoder == pad).unsqueeze(0).to(device)
     input_tokens_decoder = tokenizer_dst.encode('<s>').ids
     input_decoder = torch.tensor(input_tokens_decoder).to(device)
     mask_decoder = (torch.tril(torch.ones(input_decoder.size(0), input_decoder.size(0))) == 0).to(device)
