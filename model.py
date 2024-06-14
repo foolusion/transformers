@@ -199,8 +199,7 @@ class Transformer(nn.Module):
         return self.decoder(x, encoder_output, mask_src, mask_dst)
 
     def project(self, x):
-        x = self.proj(x)
-        return F.softmax(x, dim=-1)
+        return self.proj(x)
 
 
 def build_transformer(vocab_size_src, vocab_size_dst, seq_len, d_model: int = 512, N: int = 6, heads: int = 8,

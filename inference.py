@@ -5,7 +5,7 @@ import torch
 from train import get_model, get_ds
 
 
-def beam_search_inference(beam_size: int = 4):
+def greedy_inference():
     seq_len = 384
     d_model = 384
     N = 6
@@ -20,7 +20,8 @@ def beam_search_inference(beam_size: int = 4):
     model.eval()
     model_file = Path('./data/model').joinpath('model.pt')
     print(f'Loading model from {model_file}')
-    torch.load(model_file)
+    state = torch.load(model_file)
+    model.load_state_dict(state['model_state_dict'])
     pad = tokenizer_src.token_to_id('<pad>')
     eos = tokenizer_dst.token_to_id('</s>')
     text_eng = f'<s>{input("Enter the english text to be translated: ")}</s>'
@@ -29,26 +30,24 @@ def beam_search_inference(beam_size: int = 4):
     input_encoder = torch.tensor(input_tokens_encoder + [pad] * pad_tokens_input).to(device)
     mask_encoder = (input_encoder == pad).unsqueeze(0).to(device)
     input_tokens_decoder = tokenizer_dst.encode('<s>').ids
-    input_decoder = torch.tensor(input_tokens_decoder).to(device)
+    input_decoder = torch.tensor([input_tokens_decoder]).to(device)
     mask_decoder = (torch.tril(torch.ones(input_decoder.size(0), input_decoder.size(0))) == 0).to(device)
     with torch.no_grad():
-
         output_encoder = model.encode(input_encoder, mask_encoder)
-        search = [input_decoder]
-        while search:
-            input_decoder = search[0]
-            search = search[1:]
+        while True:
             if input_decoder.size(-1) >= seq_len:
                 break
             output_decoder = model.decode(input_decoder, output_encoder, mask_encoder, mask_decoder)
             prob = model.project(output_decoder[:, -1])
-            _, indices = torch.topk(prob, beam_size)
-            if eos in indices:
+            prob = torch.nn.functional.softmax(prob, dim=-1)
+            next_token = torch.multinomial(prob, num_samples=1)
+            if eos in next_token:
                 break
-            search += [torch.cat((input_decoder, i)) for i in indices]
-        out = tokenizer_dst.decode(output_decoder[:, -1])
+
+            input_decoder = torch.cat((input_decoder, next_token), dim=1)
+        out = tokenizer_dst.decode(input_decoder[0].tolist())
         print(out)
 
 
 if __name__ == '__main__':
-    beam_search_inference(4)
+    greedy_inference()

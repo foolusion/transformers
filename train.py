@@ -97,6 +97,7 @@ def train_model():
         initial_epoch = state['epoch'] + 1
         optimizer.load_state_dict(state['optimizer_state_dict'])
         global_step = state['global_step']
+        model.load_state_dict(state['model_state_dict'])
 
     loss_fn = nn.CrossEntropyLoss(ignore_index=tokenizer_src.token_to_id('<pad>'), label_smoothing=0.1).to(device)
     for epoch in range(initial_epoch, training_epochs):
